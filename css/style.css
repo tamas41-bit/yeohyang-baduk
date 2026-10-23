@@ -302,6 +302,8 @@ button, input, select, textarea { font-family: inherit; }
   .standings-table th, .standings-table td { padding: 0.5rem 0.35rem; }
   .rank-badge { width: 22px; height: 22px; margin-right: 0; }
   .remaining, .remaining-clear { font-size: 0.78rem; }
+  .player-popover { font-size: 0.76rem; padding: 0.6rem 0.65rem; }
+  .pop-date { width: 2.5rem; }
 }
 
 /* 바둑 리그 추가 */
@@ -310,7 +312,7 @@ button, input, select, textarea { font-family: inherit; }
 .remaining { font-size: 0.88rem; color: var(--ink-soft); white-space: nowrap; }
 .remaining-clear { font-size: 0.92rem; color: #2f7a1f; font-weight: bold; white-space: nowrap; }
 .player-popover {
-  display: none; position: absolute; z-index: 300; width: 320px; max-width: calc(100vw - 16px);
+  display: none; position: absolute; z-index: 300; width: max-content; min-width: 260px; max-width: calc(100vw - 16px); overflow-x: auto;
   background: var(--dialog); color: #e8eefc;
   border: 2px solid #0a0f1e; box-shadow: inset 0 0 0 1px #8fa6d9, 0 4px 0 rgba(0,0,0,0.4);
   padding: 0.75rem 0.9rem; font-size: 0.9rem;
@@ -321,7 +323,7 @@ button, input, select, textarea { font-family: inherit; }
 .pop-head > span:last-child { color: #b9c8ea; font-size: 0.82rem; }
 .pop-section { color: #b9c8ea; font-size: 0.8rem; margin-bottom: 0.25rem; }
 .pop-divider { border-top: 1px dotted #8fa6d9; padding-top: 0.5rem; margin-top: 0.5rem; }
-.pop-line { padding: 0.15rem 0; color: #e8eefc; }
+.pop-line { padding: 0.15rem 0; color: #e8eefc; white-space: nowrap; }
 .pop-date { display: inline-block; width: 2.9rem; color: #b9c8ea; }
 .pop-empty { color: #b9c8ea; padding: 0.15rem 0; }
 .log-text {
