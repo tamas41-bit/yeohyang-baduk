@@ -42,6 +42,7 @@
   <div class="tabs">
     <div class="tab active" id="tab-standings" onclick="switchTab('standings')">순위표</div>
     <div class="tab" id="tab-matrix" onclick="switchTab('matrix')">대진표</div>
+    <div class="tab" id="tab-log" onclick="switchTab('log')">대국 기록</div>
     <div class="tab" id="tab-entry" onclick="switchTab('entry')">대국 결과 입력</div>
   </div>
 
@@ -53,13 +54,13 @@
         <span id="lastUpdated" style="font-size:0.78rem;color:var(--text-muted)"></span>
       </div>
       <div style="background:var(--bg-table);border-radius:6px;padding:0.55rem 0.9rem;margin-bottom:0.85rem;font-size:0.82rem;color:#ff7043;border-left:3px solid var(--border);">
-        ※ 회원 이름을 클릭하시면 아직 두지 않은 대국을 확인하실 수 있습니다.
+        ※ 회원 이름을 클릭하시면 대국 내역과 남은 대국을 확인하실 수 있습니다. 🎁는 가장 먼저 모든 대국을 마친 회원입니다.
       </div>
       <div class="table-scroll">
         <table class="standings-table">
           <thead>
             <tr>
-              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>승점</th><th>진행률</th>
+              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>승점</th><th>남은 경기</th>
             </tr>
           </thead>
           <tbody id="standingsBody">
@@ -83,6 +84,19 @@
     </div>
   </div>
 
+  <!-- 대국 기록 -->
+  <div class="tab-content" id="content-log">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">대국 기록</div>
+        <button class="btn btn-sm btn-gold" onclick="copyLogText()">카톡 공지 복사</button>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">아래 내용이 그대로 복사됩니다. 최근 대국이 위에 표시됩니다.</div>
+      <div id="logAlert"></div>
+      <pre class="log-text" id="logContainer"><span class="spinner"></span></pre>
+    </div>
+  </div>
+
   <!-- 결과 입력 -->
   <div class="tab-content" id="content-entry">
     <div class="card">
@@ -96,14 +110,13 @@
         </button>
         <div id="entryHelpBody" style="display:none;padding:0 0.9rem 0.75rem;color:var(--text-secondary);line-height:1.7;">
           <div style="margin-bottom:0.5rem;">대국을 마친 두 분 중 한 분만 결과를 입력하셔도 양쪽에 동시 등록됩니다.</div>
-          <div style="margin-bottom:0.5rem;">대국 후에는 진 쪽(돌을 던진 쪽 또는 계가 결과 패한 쪽)이 결과를 입력하시기를 권장드립니다.</div>
-          <div style="margin-bottom:0.5rem;">불계승·계가승·시간승 모두 [ 본인 승리 / 상대 승리 ]로 입력하시면 됩니다.</div>
-          <div style="margin-bottom:0.85rem;">단판 대국과 3판 2선승제(삼번기) 대국의 결과를 모두 선택할 수 있습니다.</div>
-          <div style="font-weight:bold;color:#ff7043;margin-bottom:0.4rem;">※ 3판 2선승제 (삼번기) ※</div>
-          <div style="margin-bottom:0.5rem;">[ 결과 입력 ]에서 [ 3판 2선승제 ]를 통해 진행할 수 있습니다.</div>
-          <div style="margin-bottom:0.5rem;">한 판이 끝날 때마다 승자를 입력해두시면 자동 저장되어, 다음 판 결과를 이어서 등록하실 수 있습니다.</div>
-          <div style="margin-bottom:0.5rem;">먼저 2승을 거두는 회원이 생기면 자동으로 리그 대국 승으로 전환되어 기록됩니다.</div>
-          <div>삼번기 도중에 단판으로 전환하시려면 [ 단판 ] 탭에서 승자를 선택해주시면 자동 전환됩니다.</div>
+          <div style="margin-bottom:0.5rem;">대국 후에는 진 쪽이 결과를 입력하시기를 권장드립니다.</div>
+          <div style="margin-bottom:0.85rem;">불계승·계가승·시간승 모두 [ 본인 승리 / 상대 승리 ]로 입력하시면 됩니다.</div>
+          <div style="font-weight:bold;color:#ff7043;margin-bottom:0.4rem;">※ 치수 입력 ※</div>
+          <div style="margin-bottom:0.5rem;">결과를 입력할 때 몇 점 접바둑이었는지 [ 치수 ]를 함께 선택해주세요.</div>
+          <div style="margin-bottom:0.5rem;">· 호선 : 돌을 가려 흑백을 정하고 덤을 주는 대국</div>
+          <div style="margin-bottom:0.5rem;">· 정선 : 하수가 흑을 잡고 덤 없이 두는 대국</div>
+          <div>· 2점 ~ 9점 : 하수가 미리 놓고 둔 돌의 수</div>
         </div>
       </div>
 
@@ -128,14 +141,8 @@
 
 </div>
 
-<!-- 미진행 경기 모달 -->
-<div class="modal-overlay" id="pendingModal">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('pendingModal').classList.remove('active')">✕</button>
-    <div class="modal-title" id="pendingModalTitle"></div>
-    <div id="pendingModalContent"></div>
-  </div>
-</div>
+<!-- 순위표 이름 말풍선 -->
+<div class="player-popover" id="playerPopover"></div>
 
 <!-- 결과 입력 모달 -->
 <div class="modal-overlay" id="resultModal">
@@ -145,25 +152,27 @@
     <div id="modalMatchInfo" style="margin-bottom:1rem;color:var(--text-secondary);"></div>
     <div id="modalAlert"></div>
 
-    <!-- 방식 선택 -->
-    <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
-      <button id="modeBtn-single" class="btn btn-sm btn-primary" style="flex:1" onclick="setMatchMode('single')">단판</button>
-      <button id="modeBtn-bo3" class="btn btn-sm btn-secondary" style="flex:1" onclick="setMatchMode('bo3')">3판 2선승제</button>
+    <div class="form-group">
+      <label class="form-label">치수 (몇 점 접바둑이었나요?)</label>
+      <select class="form-control" id="stonesSelect">
+        <option value="">-- 치수 선택 --</option>
+        <option value="호선">호선</option>
+        <option value="정선">정선</option>
+        <option value="2점">2점</option>
+        <option value="3점">3점</option>
+        <option value="4점">4점</option>
+        <option value="5점">5점</option>
+        <option value="6점">6점</option>
+        <option value="7점">7점</option>
+        <option value="8점">8점</option>
+        <option value="9점">9점</option>
+      </select>
     </div>
 
-    <!-- 단판 -->
-    <div id="modeSingle" style="display:flex;flex-direction:column;gap:0.75rem;">
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
       <button class="btn btn-primary btn-full" onclick="submitResult('win')">본인 승리</button>
       <button class="btn btn-danger btn-full" onclick="submitResult('loss')">상대 승리</button>
       <button class="btn btn-secondary btn-full" onclick="resetResult()">결과 초기화</button>
-    </div>
-
-    <!-- 3판 2선승제 -->
-    <div id="modeBo3" style="display:none;">
-      <div id="bo3ScoreDisplay" style="text-align:center;font-size:2rem;font-weight:bold;margin-bottom:1rem;padding:0.6rem;background:var(--bg-table);border-radius:8px;letter-spacing:0.1em;">
-        0 : 0
-      </div>
-      <div id="bo3Games"></div>
     </div>
   </div>
 </div>

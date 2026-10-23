@@ -273,3 +273,26 @@ body {
   .form-grid { grid-template-columns: 1fr; }
   .match-item { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
 }
+
+/* 바둑 리그 추가 */
+.league-notice { margin-top: 0.5rem; font-size: 0.88rem; color: var(--text-primary); white-space: pre-line; line-height: 1.6; }
+.player-link { cursor: pointer; text-decoration: underline dotted; }
+.remaining { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; }
+.remaining-clear { font-size: 0.85rem; color: #81c784; font-weight: bold; white-space: nowrap; }
+.player-popover {
+  display: none; position: absolute; z-index: 300; width: 300px; max-width: calc(100vw - 16px);
+  background: var(--bg-card); border: 1px solid var(--gold); border-radius: 8px;
+  padding: 0.75rem 0.9rem; font-size: 0.85rem; box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.pop-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
+.pop-head strong { color: var(--gold); font-size: 0.95rem; }
+.pop-head span { color: var(--text-secondary); font-size: 0.8rem; }
+.pop-section { color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem; }
+.pop-divider { border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem; }
+.pop-line { padding: 0.15rem 0; color: var(--text-primary); }
+.pop-date { display: inline-block; width: 2.7rem; color: var(--text-secondary); }
+.pop-empty { color: var(--text-secondary); padding: 0.15rem 0; }
+.log-text {
+  white-space: pre-wrap; word-break: keep-all; font-family: inherit; font-size: 0.9rem; line-height: 1.7;
+  background: var(--bg-table); border-radius: 6px; padding: 0.9rem 1rem; margin: 0; color: var(--text-primary);
+}

@@ -136,13 +136,15 @@ async function createLeague() {
   const win = parseInt(document.getElementById('scoreWin').value) || 0;
   const loss = parseInt(document.getElementById('scoreLoss').value) || 0;
   const noGame = parseInt(document.getElementById('scoreNoGame').value) || 0;
+  const notice = document.getElementById('leagueNotice').value.trim();
   if (!name) { showAlert('createLeagueAlert', '리그 이름을 입력하세요.'); return; }
 
   try {
     const newRef = doc(collection(db, 'baduk_leagues'));
-    await setDoc(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
+    await setDoc(newRef, { name, notice, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
     showAlert('createLeagueAlert', '리그가 생성되었습니다! 선수 관리 탭에서 참가자를 등록하세요.', 'success');
     document.getElementById('leagueName').value = '';
+    document.getElementById('leagueNotice').value = '';
     await loadLeagues();
   } catch (e) { showAlert('createLeagueAlert', '오류: ' + e.message); }
 }
@@ -170,6 +172,7 @@ function openEditLeagueModal(leagueId) {
   document.getElementById('editLeagueWin').value = league.scoring.win;
   document.getElementById('editLeagueLoss').value = league.scoring.loss;
   document.getElementById('editLeagueNoGame').value = league.scoring.noGame;
+  document.getElementById('editLeagueNotice').value = league.notice || '';
   document.getElementById('editLeagueAlert').innerHTML = '';
   document.getElementById('editLeagueModal').classList.add('active');
 }
@@ -180,10 +183,11 @@ async function saveEditLeague() {
   const win = parseInt(document.getElementById('editLeagueWin').value) || 0;
   const loss = parseInt(document.getElementById('editLeagueLoss').value) || 0;
   const noGame = parseInt(document.getElementById('editLeagueNoGame').value) || 0;
+  const notice = document.getElementById('editLeagueNotice').value.trim();
   if (!name) { showAlert('editLeagueAlert', '리그 이름을 입력하세요.'); return; }
 
   try {
-    await updateDoc(doc(db, 'baduk_leagues', editLeagueId), { name, scoring: { win, loss, noGame } });
+    await updateDoc(doc(db, 'baduk_leagues', editLeagueId), { name, notice, scoring: { win, loss, noGame } });
     document.getElementById('editLeagueModal').classList.remove('active');
     editLeagueId = null;
     await loadLeagues();
@@ -622,8 +626,9 @@ function renderResultPlayerMatches() {
       const p1n = resultPlayers.find(p => p.id === m.player1Id)?.name || '?';
       const p2n = resultPlayers.find(p => p.id === m.player2Id)?.name || '?';
       let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      const stonesText = m.stones ? ` (${m.stones})` : '';
+      if (m.result === 'player1') { resultText = `${p1n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
       else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
       else if (m.result === 'noGame') { resultText = '미대국'; resultStyle = 'color:#9e9e9e'; }
       return `<div class="match-item">
@@ -650,6 +655,8 @@ function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
   document.getElementById('editBtnP1Win').textContent = `${p1Name} 승리`;
   document.getElementById('editBtnP2Win').textContent = `${p2Name} 승리`;
   document.getElementById('editModalAlert').innerHTML = '';
+  const list = resultLeague?.id === currentEditLeagueId ? resultMatches : historyMatches;
+  document.getElementById('editStonesSelect').value = list.find(m => m.id === matchId)?.stones || '';
   document.getElementById('editResultModal').classList.add('active');
 }
 
@@ -659,9 +666,13 @@ async function adminSetResult(result) {
   const p1Id = document.getElementById('editPlayer1Id').value;
   const p2Id = document.getElementById('editPlayer2Id').value;
   const winnerId = result === 'player1' ? p1Id : result === 'player2' ? p2Id : null;
+  const stones = document.getElementById('editStonesSelect').value;
+  if (winnerId && !stones) { showAlert('editModalAlert', '치수를 먼저 선택해주세요.'); return; }
+  const update = winnerId
+    ? { result, winnerId, stones, reportedBy: 'admin', reportedAt: new Date() }
+    : { result: null, winnerId: null, stones: null, reportedBy: null, reportedAt: null };
   try {
-    await updateDoc(doc(db, 'baduk_leagues', currentEditLeagueId, 'matches', matchId),
-      { result, winnerId, reportedBy: 'admin', reportedAt: new Date() });
+    await updateDoc(doc(db, 'baduk_leagues', currentEditLeagueId, 'matches', matchId), update);
     document.getElementById('editResultModal').classList.remove('active');
     if (resultLeague?.id === currentEditLeagueId) await loadResultData();
     if (historyLeague?.id === currentEditLeagueId) await loadHistoryData();
@@ -763,8 +774,9 @@ function renderHistoryPlayerMatches() {
       const p1n = historyPlayers.find(p => p.id === m.player1Id)?.name || '?';
       const p2n = historyPlayers.find(p => p.id === m.player2Id)?.name || '?';
       let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      const stonesText = m.stones ? ` (${m.stones})` : '';
+      if (m.result === 'player1') { resultText = `${p1n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
       else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
       else if (m.result === 'noGame') { resultText = '미대국'; resultStyle = 'color:#9e9e9e'; }
       return `<div class="match-item">
@@ -791,6 +803,8 @@ function openHistoryEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
   document.getElementById('editBtnP1Win').textContent = `${p1Name} 승리`;
   document.getElementById('editBtnP2Win').textContent = `${p2Name} 승리`;
   document.getElementById('editModalAlert').innerHTML = '';
+  const list = resultLeague?.id === currentEditLeagueId ? resultMatches : historyMatches;
+  document.getElementById('editStonesSelect').value = list.find(m => m.id === matchId)?.stones || '';
   document.getElementById('editResultModal').classList.add('active');
 }
 
