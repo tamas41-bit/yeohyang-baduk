@@ -286,7 +286,7 @@ body {
 }
 .pop-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
 .pop-head strong { color: var(--gold); font-size: 0.95rem; }
-.pop-head span { color: var(--text-secondary); font-size: 0.8rem; }
+.pop-head > span:last-child { color: var(--text-secondary); font-size: 0.8rem; }
 .pop-section { color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem; }
 .pop-divider { border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem; }
 .pop-line { padding: 0.15rem 0; color: var(--text-primary); }
@@ -296,3 +296,5 @@ body {
   white-space: pre-wrap; word-break: keep-all; font-family: inherit; font-size: 0.9rem; line-height: 1.7;
   background: var(--bg-table); border-radius: 6px; padding: 0.9rem 1rem; margin: 0; color: var(--text-primary);
 }
+.rank-tag { font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-left: 0.25rem; }
+.pop-head .rank-tag { font-size: 0.75rem; }
