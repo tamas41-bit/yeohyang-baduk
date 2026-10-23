@@ -303,6 +303,11 @@ button, input, select, textarea { font-family: inherit; }
   .rank-badge { width: 22px; height: 22px; margin-right: 0; }
   .remaining, .remaining-clear { font-size: 0.78rem; }
   .player-popover { font-size: 0.76rem; padding: 0.6rem 0.65rem; }
+  .container { padding: 1rem 0.5rem; }
+  #content-matrix .card { padding: 0.6rem; }
+  #content-matrix .card-header { margin: -0.2rem -0.2rem 0.6rem; }
+  .matrix-table th, .matrix-table td { min-width: 0; padding: 0.35rem 0.15rem; font-size: 0.72rem; }
+  .matrix-table td:first-child, .matrix-table th:first-child { padding: 0.35rem 0.3rem; white-space: nowrap; }
   .pop-date { width: 2.5rem; }
 }
 
