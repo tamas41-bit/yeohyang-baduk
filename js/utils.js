@@ -88,7 +88,12 @@ export function formatMonthDay(d) {
 
 // subjectId가 있으면 그 회원을 앞에, 없으면 승자를 앞에 둔다
 export function matchLine(m, players, subjectId = null) {
-  const name = id => players.find(p => p.id === id)?.name || '?';
+  const name = id => {
+    const p = players.find(x => x.id === id);
+    if (!p) return '?';
+    const rank = formatRank(p.handicap);
+    return rank === '-' ? p.name : `${p.name}(${rank})`;
+  };
   const stones = m.stones ? ` (${m.stones})` : '';
   if (m.result !== 'player1' && m.result !== 'player2') {
     const [a, b] = subjectId === m.player2Id ? [m.player2Id, m.player1Id] : [m.player1Id, m.player2Id];
