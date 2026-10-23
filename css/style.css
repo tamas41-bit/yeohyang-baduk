@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Song+Myung&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
 
 .input-masked {
   -webkit-text-security: disc;
@@ -37,7 +37,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Song Myung', 'Batang', serif;
+  font-family: 'Gowun Batang', 'Batang', serif;
   background-color: #b98243;
   background-image:
     linear-gradient(#6e4520 1px, transparent 1px),
