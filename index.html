@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>바둑 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">바둑 리그</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link active">리그전 현황</a>
+      <a href="schedule.html" class="nav-link">대국 가능 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="rules.html" class="nav-link">회칙</a>
+      <a href="lecture.html" class="nav-link" style="display:none;">바둑 강의 게시판</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;color:#ff7043;font-weight:bold;">로그인</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('baduk_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
+  })();
+  function navLogout(){ localStorage.removeItem('baduk_player'); location.reload(); }
+</script>
+
+<div class="container">
+
+  <div id="leagueBanner"><div class="loading"><span class="spinner"></span> 불러오는 중...</div></div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-standings" onclick="switchTab('standings')">순위표</div>
+    <div class="tab" id="tab-matrix" onclick="switchTab('matrix')">대진표</div>
+    <div class="tab" id="tab-entry" onclick="switchTab('entry')">대국 결과 입력</div>
+  </div>
+
+  <!-- 순위표 -->
+  <div class="tab-content active" id="content-standings">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">순위표</div>
+        <span id="lastUpdated" style="font-size:0.78rem;color:var(--text-muted)"></span>
+      </div>
+      <div style="background:var(--bg-table);border-radius:6px;padding:0.55rem 0.9rem;margin-bottom:0.85rem;font-size:0.82rem;color:#ff7043;border-left:3px solid var(--border);">
+        ※ 회원 이름을 클릭하시면 아직 두지 않은 대국을 확인하실 수 있습니다.
+      </div>
+      <div class="table-scroll">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>승점</th><th>진행률</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody">
+            <tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대진표 -->
+  <div class="tab-content" id="content-matrix">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">대진표</div>
+        <span style="font-size:0.78rem;color:var(--text-muted)">행=나, 열=상대 | 승/패/미</span>
+      </div>
+      <div class="table-scroll" id="matrixContainer">
+        <div class="loading"><span class="spinner"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 입력 -->
+  <div class="tab-content" id="content-entry">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">대국 결과 입력</div>
+      </div>
+      <div style="background:var(--bg-table);border-radius:6px;margin-bottom:1rem;font-size:0.82rem;border-left:3px solid var(--border);">
+        <div style="padding:0.6rem 0.9rem 0;font-weight:bold;color:var(--gold);font-size:0.82rem;">진행하신 대국의 결과를 입력하는 공간입니다.</div>
+        <button onclick="toggleEntryHelp()" id="entryHelpToggle" style="width:100%;background:none;border:none;padding:0.4rem 0.9rem;text-align:left;cursor:pointer;color:#ff7043;font-size:0.82rem;font-weight:bold;display:flex;align-items:center;gap:0.4rem;">
+          <span id="entryHelpArrow">▶</span> 사용방법 펼쳐보기
+        </button>
+        <div id="entryHelpBody" style="display:none;padding:0 0.9rem 0.75rem;color:var(--text-secondary);line-height:1.7;">
+          <div style="margin-bottom:0.5rem;">대국을 마친 두 분 중 한 분만 결과를 입력하셔도 양쪽에 동시 등록됩니다.</div>
+          <div style="margin-bottom:0.5rem;">대국 후에는 진 쪽(돌을 던진 쪽 또는 계가 결과 패한 쪽)이 결과를 입력하시기를 권장드립니다.</div>
+          <div style="margin-bottom:0.5rem;">불계승·계가승·시간승 모두 [ 본인 승리 / 상대 승리 ]로 입력하시면 됩니다.</div>
+          <div style="margin-bottom:0.85rem;">단판 대국과 3판 2선승제(삼번기) 대국의 결과를 모두 선택할 수 있습니다.</div>
+          <div style="font-weight:bold;color:#ff7043;margin-bottom:0.4rem;">※ 3판 2선승제 (삼번기) ※</div>
+          <div style="margin-bottom:0.5rem;">[ 결과 입력 ]에서 [ 3판 2선승제 ]를 통해 진행할 수 있습니다.</div>
+          <div style="margin-bottom:0.5rem;">한 판이 끝날 때마다 승자를 입력해두시면 자동 저장되어, 다음 판 결과를 이어서 등록하실 수 있습니다.</div>
+          <div style="margin-bottom:0.5rem;">먼저 2승을 거두는 회원이 생기면 자동으로 리그 대국 승으로 전환되어 기록됩니다.</div>
+          <div>삼번기 도중에 단판으로 전환하시려면 [ 단판 ] 탭에서 승자를 선택해주시면 자동 전환됩니다.</div>
+        </div>
+      </div>
+
+      <!-- 로그인 유도 -->
+      <div id="entryStep1" style="text-align:center;padding:1.5rem 0;">
+        <div style="margin-bottom:0.75rem;"></div>
+        <div style="color:var(--text-secondary);margin-bottom:1.5rem;">결과 입력은 로그인 후 이용할 수 있습니다.</div>
+        <a href="login.html" class="btn btn-primary" style="display:inline-block;padding:0.65rem 2.5rem;font-size:1rem;">로그인</a>
+      </div>
+
+      <!-- 경기 목록 단계 -->
+      <div id="entryStep2" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <span style="font-size:1.05rem;font-weight:bold;color:var(--gold)" id="loggedInName"></span> 님
+        </div>
+        <div class="progress-bar" style="margin-bottom:0.3rem;"><div class="progress-fill" id="entryProgress" style="width:0%"></div></div>
+        <div style="text-align:right;font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem" id="entryProgressText"></div>
+        <div id="entryMatchList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 미진행 경기 모달 -->
+<div class="modal-overlay" id="pendingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('pendingModal').classList.remove('active')">✕</button>
+    <div class="modal-title" id="pendingModalTitle"></div>
+    <div id="pendingModalContent"></div>
+  </div>
+</div>
+
+<!-- 결과 입력 모달 -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('resultModal').classList.remove('active')">✕</button>
+    <div class="modal-title">대국 결과 입력</div>
+    <div id="modalMatchInfo" style="margin-bottom:1rem;color:var(--text-secondary);"></div>
+    <div id="modalAlert"></div>
+
+    <!-- 방식 선택 -->
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+      <button id="modeBtn-single" class="btn btn-sm btn-primary" style="flex:1" onclick="setMatchMode('single')">단판</button>
+      <button id="modeBtn-bo3" class="btn btn-sm btn-secondary" style="flex:1" onclick="setMatchMode('bo3')">3판 2선승제</button>
+    </div>
+
+    <!-- 단판 -->
+    <div id="modeSingle" style="display:flex;flex-direction:column;gap:0.75rem;">
+      <button class="btn btn-primary btn-full" onclick="submitResult('win')">본인 승리</button>
+      <button class="btn btn-danger btn-full" onclick="submitResult('loss')">상대 승리</button>
+      <button class="btn btn-secondary btn-full" onclick="resetResult()">결과 초기화</button>
+    </div>
+
+    <!-- 3판 2선승제 -->
+    <div id="modeBo3" style="display:none;">
+      <div id="bo3ScoreDisplay" style="text-align:center;font-size:2rem;font-weight:bold;margin-bottom:1rem;padding:0.6rem;background:var(--bg-table);border-radius:8px;letter-spacing:0.1em;">
+        0 : 0
+      </div>
+      <div id="bo3Games"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleEntryHelp() {
+    const body = document.getElementById('entryHelpBody');
+    const arrow = document.getElementById('entryHelpArrow');
+    const toggle = document.getElementById('entryHelpToggle');
+    const open = body.style.display === 'none';
+    body.style.display = open ? 'block' : 'none';
+    arrow.textContent = open ? '▼' : '▶';
+    toggle.lastChild.textContent = open ? ' 사용방법 접기' : ' 사용방법 펼쳐보기';
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('content-' + name).classList.add('active');
+    if (name === 'matrix' && typeof renderMatrix === 'function') renderMatrix();
+  }
+</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대국 일정 - 바둑 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">바둑 리그</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">리그전 현황</a>
+      <a href="schedule.html" class="nav-link active">대국 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="rules.html" class="nav-link">회칙</a>
+      <a href="lecture.html" class="nav-link" style="display:none;">바둑 강의 게시판</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('baduk_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
+  })();
+  function navLogout(){ localStorage.removeItem('baduk_player'); location.reload(); }
+</script>
+
+<div class="container">
+
+  <div class="tabs">
+    <div class="tab active" id="stab-list" onclick="switchScheduleTab('list')">일정 목록</div>
+    <div class="tab"        id="stab-post" onclick="switchScheduleTab('post')">내 일정 등록</div>
+  </div>
+
+  <!-- 일정 목록 -->
+  <div class="tab-content active" id="scontent-list">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">게임 가능 일정</div>
+        <span style="font-size:0.78rem;color:var(--text-muted)">경기 가능한 시간을 등록한 목록입니다</span>
+      </div>
+      <div id="scheduleListContent"><div class="loading"><span class="spinner"></span></div></div>
+    </div>
+  </div>
+
+  <!-- 내 일정 등록 -->
+  <div class="tab-content" id="scontent-post">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">내 일정 등록</div>
+      </div>
+
+      <!-- 비로그인 안내 -->
+      <div id="scheduleLoginArea">
+        <div class="alert alert-info">로그인이 필요합니다. <a href="login.html" style="color:var(--gold);font-weight:600;">로그인 하기</a></div>
+      </div>
+
+      <!-- 등록 폼 영역 -->
+      <div id="scheduleFormArea" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div><span style="font-size:1.05rem;font-weight:bold;color:var(--gold)" id="scheduleLoggedInName"></span></div>
+          <button class="btn btn-secondary btn-sm" onclick="logoutSchedule()">로그아웃</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input type="date" class="form-control" id="scheduleDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">시간</label>
+          <input type="time" class="form-control" id="scheduleTime">
+        </div>
+        <div class="form-group">
+          <label class="form-label">메모 (선택)</label>
+          <input type="text" class="form-control" id="scheduleNote" placeholder="예 : 기원, 온라인(타이젬/오로), 오후 7시 이후 가능 등">
+        </div>
+        <div id="scheduleFormAlert"></div>
+        <button class="btn btn-gold btn-full" onclick="postSchedule()">일정 등록</button>
+
+        <div style="margin-top:1.5rem;">
+          <div style="color:var(--gold);font-weight:600;font-size:0.9rem;margin-bottom:0.5rem;">내 등록 일정</div>
+          <div id="myScheduleList"><div class="loading"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchScheduleTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('stab-' + name).classList.add('active');
+    document.getElementById('scontent-' + name).classList.add('active');
+  }
+</script>
+<script type="module" src="js/schedule.js"></script>
+</body>
+</html>

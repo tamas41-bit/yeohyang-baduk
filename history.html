@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이전 리그 결과 - 바둑 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">바둑 리그</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">리그전 현황</a>
+      <a href="schedule.html" class="nav-link">대국 일정</a>
+      <a href="history.html" class="nav-link active">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="rules.html" class="nav-link">회칙</a>
+      <a href="lecture.html" class="nav-link" style="display:none;">바둑 강의 게시판</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('baduk_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
+  })();
+  function navLogout(){ localStorage.removeItem('baduk_player'); location.reload(); }
+</script>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">이전 리그 결과</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">리그 선택</label>
+      <select class="form-control" id="leagueSelect" onchange="onLeagueSelect()">
+        <option value="">불러오는 중...</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="historyContent"></div>
+
+</div>
+
+<script type="module" src="js/history.js"></script>
+</body>
+</html>

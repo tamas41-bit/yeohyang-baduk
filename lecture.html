@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>바둑 강의 게시판 - 바둑 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .board-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+    .board-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      background: var(--bg-table);
+      transition: background 0.15s;
+    }
+    .board-item-header:hover {
+      background: var(--bg-card);
+    }
+    .board-toggle-arrow {
+      color: var(--gold);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-left: 0.75rem;
+    }
+    .board-item-body {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">바둑 리그</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">리그전 현황</a>
+      <a href="schedule.html" class="nav-link">대국 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="rules.html" class="nav-link">회칙</a>
+      <a href="lecture.html" class="nav-link active" style="display:none;">바둑 강의 게시판</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('baduk_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
+  })();
+  function navLogout(){ localStorage.removeItem('baduk_player'); location.reload(); }
+</script>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">바둑 강의 게시판</div>
+    </div>
+    <div id="boardList">
+      <div class="loading"><span class="spinner"></span></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/lecture.js"></script>
+</body>
+</html>
