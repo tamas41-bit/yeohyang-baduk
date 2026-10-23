@@ -161,7 +161,7 @@ function escapeHtml(str) {
 
 function rankTag(playerId) {
   const rank = formatRank(allPlayers.find(x => x.id === playerId)?.handicap);
-  return rank === '-' ? '' : ` <span class="rank-tag">${rank}</span>`;
+  return rank === '-' ? '' : `<span class="rank-tag">(${rank})</span>`;
 }
 
 function remainingLabel(p) {
@@ -363,11 +363,11 @@ function togglePlayerPopover(event, playerId) {
   const doneHtml = done.length
     ? done.map(m => {
         const d = matchDate(m);
-        return `<div class="pop-line"><span class="pop-date">${d ? formatMonthDay(d) : ''}</span>${matchLine(m, allPlayers, playerId)}</div>`;
+        return `<div class="pop-line"><span class="pop-date">${d ? formatMonthDay(d) : ''}</span>${matchLine(m, allPlayers, playerId, true)}</div>`;
       }).join('')
     : '<div class="pop-empty">아직 둔 대국이 없습니다</div>';
   const waitHtml = waiting.length
-    ? waiting.map(m => `<div class="pop-line">${matchLine(m, allPlayers, playerId)}</div>`).join('')
+    ? waiting.map(m => `<div class="pop-line">${matchLine(m, allPlayers, playerId, true)}</div>`).join('')
     : '<div class="pop-empty">남은 대국이 없습니다</div>';
 
   const pop = document.getElementById('playerPopover');
@@ -405,14 +405,15 @@ popoverEl.addEventListener('mouseenter', () => clearTimeout(popoverCloseTimer));
 popoverEl.addEventListener('mouseleave', schedulePopoverClose);
 
 // ── 대국 기록 (카톡 공지용) ──
-function buildLogText() {
+function buildLogText(html = false) {
+  const esc = t => html ? escapeHtml(t) : t;
   const standings = calculateStandings(allPlayers, allMatches, activeLeague.scoring);
   const finisher = firstFinisherId(standings, allMatches);
-  const lines = [activeLeague.name];
-  if (activeLeague.notice) lines.push(activeLeague.notice.trim());
+  const lines = [esc(activeLeague.name)];
+  if (activeLeague.notice) lines.push(esc(activeLeague.notice.trim()));
   lines.push('');
   standings.forEach(p => {
-    lines.push(`${p.name}${p.id === finisher ? ' 🎁' : ''} ${p.wins}승 ${p.losses}패 (${p.points}점) - ${remainingLabel(p)}`);
+    lines.push(`${esc(p.name)}${p.id === finisher ? ' 🎁' : ''} ${p.wins}승 ${p.losses}패 (${p.points}점) - ${remainingLabel(p)}`);
   });
 
   const groups = new Map();
@@ -420,7 +421,7 @@ function buildLogText() {
     const d = matchDate(m);
     const key = d ? formatMonthDay(d) : '날짜 없음';
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(matchLine(m, allPlayers));
+    groups.get(key).push(matchLine(m, allPlayers, null, html));
   });
   groups.forEach((items, date) => lines.push('', date, ...items));
   return lines.join('\n');
@@ -429,7 +430,7 @@ function buildLogText() {
 function renderLog() {
   const el = document.getElementById('logContainer');
   if (!el || !activeLeague) return;
-  el.textContent = buildLogText();
+  el.innerHTML = buildLogText(true);
 }
 
 async function copyLogText() {

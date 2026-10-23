@@ -86,23 +86,26 @@ export function formatMonthDay(d) {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-// subjectId가 있으면 그 회원을 앞에, 없으면 승자를 앞에 둔다
-export function matchLine(m, players, subjectId = null) {
+// subjectId가 있으면 그 회원을 앞에, 없으면 승자를 앞에 둔다. html이면 색·크기용 span을 붙인다
+export function matchLine(m, players, subjectId = null, html = false) {
+  const small = t => html ? `<span class="ml-small">${t}</span>` : t;
+  const win = html ? '<span class="ml-win">승</span>' : '승';
+  const loss = html ? '<span class="ml-loss">패</span>' : '패';
   const name = id => {
     const p = players.find(x => x.id === id);
     if (!p) return '?';
     const rank = formatRank(p.handicap);
-    return rank === '-' ? p.name : `${p.name}(${rank})`;
+    return rank === '-' ? p.name : `${p.name}${small(`(${rank})`)}`;
   };
-  const stones = m.stones ? ` (${m.stones})` : '';
+  const stones = m.stones ? ` ${small(`(${m.stones})`)}` : '';
   if (m.result !== 'player1' && m.result !== 'player2') {
     const [a, b] = subjectId === m.player2Id ? [m.player2Id, m.player1Id] : [m.player1Id, m.player2Id];
-    return m.result ? `${name(a)} VS ${name(b)} (미대국)` : `${name(a)} VS ${name(b)} (대기중)`;
+    return `${name(a)} VS ${name(b)} ${small(m.result ? '(미대국)' : '(대기중)')}`;
   }
   const winner = m.result === 'player1' ? m.player1Id : m.player2Id;
   const loser = winner === m.player1Id ? m.player2Id : m.player1Id;
-  if (subjectId === loser) return `${name(loser)} 패 VS ${name(winner)} 승${stones}`;
-  return `${name(winner)} 승 VS ${name(loser)} 패${stones}`;
+  if (subjectId === loser) return `${name(loser)} ${loss} VS ${name(winner)} ${win}${stones}`;
+  return `${name(winner)} ${win} VS ${name(loser)} ${loss}${stones}`;
 }
 
 // 모든 대국을 가장 먼저 끝낸 선수 id (마지막 대국 입력 시각 기준)

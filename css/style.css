@@ -337,5 +337,11 @@ button, input, select, textarea { font-family: inherit; }
   border: 2px solid var(--frame-dark); box-shadow: inset 0 0 0 1px var(--paper-line);
   padding: 0.9rem 1.1rem; margin: 0;
 }
-.rank-tag { font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; }
+.rank-tag { font-size: 0.78em; color: var(--ink-soft); margin-left: 0.15rem; }
+.standings-table td:nth-child(2) { white-space: nowrap; }
+.ml-small { font-size: 0.8em; opacity: 0.85; }
+.ml-win { color: #7cd65a; font-weight: bold; }
+.ml-loss { color: #ff7a66; font-weight: bold; }
+.log-text .ml-win { color: #2f7a1f; }
+.log-text .ml-loss { color: #b0321d; }
 .pop-head .rank-tag { color: #b9c8ea; }
