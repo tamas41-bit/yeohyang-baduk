@@ -60,21 +60,6 @@ export function calculateStandings(players, matches, scoring) {
     .sort((a, b) => b.points !== a.points ? b.points - a.points : b.wins - a.wins);
 }
 
-// 기력은 정렬을 위해 숫자로 저장: n단 = 100+n, n급 = 100-n
-export function parseRank(str) {
-  const m = String(str).replace(/\s/g, '').match(/^(\d{1,2})(단|급)$/);
-  if (!m) return null;
-  const n = parseInt(m[1]);
-  if (m[2] === '단' && n >= 1 && n <= 9) return 100 + n;
-  if (m[2] === '급' && n >= 1 && n <= 30) return 100 - n;
-  return null;
-}
-
-export function formatRank(num) {
-  if (num == null || num === 0 || num === 100) return '-';
-  return num > 100 ? `${num - 100}단` : `${100 - num}급`;
-}
-
 export const STONE_OPTIONS = ['호선', '정선', '2점', '3점', '4점', '5점', '6점', '7점', '8점', '9점'];
 
 export function matchDate(m) {
@@ -91,12 +76,7 @@ export function matchLine(m, players, subjectId = null, html = false) {
   const small = t => html ? `<span class="ml-small">${t}</span>` : t;
   const win = html ? '<span class="ml-win">승</span>' : '승';
   const loss = html ? '<span class="ml-loss">패</span>' : '패';
-  const name = id => {
-    const p = players.find(x => x.id === id);
-    if (!p) return '?';
-    const rank = formatRank(p.handicap);
-    return rank === '-' ? p.name : `${p.name}${small(`(${rank})`)}`;
-  };
+  const name = id => players.find(x => x.id === id)?.name || '?';
   const stones = m.stones ? ` ${small(`(${m.stones})`)}` : '';
   if (m.result !== 'player1' && m.result !== 'player2') {
     const [a, b] = subjectId === m.player2Id ? [m.player2Id, m.player1Id] : [m.player1Id, m.player2Id];

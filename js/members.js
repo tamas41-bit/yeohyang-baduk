@@ -1,13 +1,12 @@
 import { db } from './firebase-config.js';
 import {
-  collection, getDocs, orderBy, query
+  collection, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { formatRank } from './utils.js';
 
 async function init() {
   try {
-    const snap = await getDocs(query(collection(db, 'baduk_members'), orderBy('handicap', 'desc')));
-    const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await getDocs(collection(db, 'baduk_members'));
+    const members = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
     document.getElementById('memberCount').textContent = `총 ${members.length}명`;
 
     const tbody = document.getElementById('memberTableBody');
@@ -19,7 +18,6 @@ async function init() {
       <tr>
         <td>${i + 1}</td>
         <td><strong>${m.name}</strong></td>
-        <td>${formatRank(m.handicap)}</td>
         <td>${m.yearlyScore ?? '-'}</td>
       </tr>`).join('');
   } catch (e) {

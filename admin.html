@@ -140,7 +140,6 @@
         <div id="memberAlert"></div>
         <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;">
           <input type="text" class="form-control" id="newMemberName" placeholder="이름" style="flex:1;min-width:100px;">
-          <input type="text" class="form-control" id="newMemberHandicap" placeholder="기력 (예: 5급)" style="width:110px;">
           <input type="text" class="form-control" id="newMemberPin" placeholder="비밀번호 4자리" maxlength="4" inputmode="numeric" style="width:127px;">
           <button class="btn btn-primary" onclick="addMember()">추가</button>
         </div>
@@ -157,7 +156,7 @@
         </div>
         <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
           <div style="font-weight:bold;color:var(--gold);margin-bottom:0.5rem;">※ [승점 조정]이 있는 이유 ※</div>
-          <div>리그전 종료 후 승점이 동점인 회원이 발생하는 경우, 승자승 / 기력(하수 우선) / 나이순 등 특정 기준에 따라 승자가 발생합니다.<br>
+          <div>리그전 종료 후 승점이 동점인 회원이 발생하는 경우, 승자승 / 나이순 등 특정 기준에 따라 승자가 발생합니다.<br>
           이 때, 승자에게 추가 승점을 부여하여 순위표에서 해당 승자의 순위를 조정하기 위하여 이 기능을 만들었습니다.<br>
           추가 부여할 승점은 <strong>0.5점</strong>을 추천드리며, 이유는 또 다른 동점자를 만들지 않기 위함입니다.</div>
           <div style="font-weight:bold;color:#ff7043;margin-top:0.85rem;margin-bottom:0.5rem;">※ 주의사항 ※</div>
@@ -447,23 +446,6 @@
     </div>
     <div id="changePinAlert"></div>
     <button class="btn btn-primary btn-full" onclick="saveChangedPin()">저장</button>
-  </div>
-</div>
-
-<!-- 기력 변경 모달 -->
-<div class="modal-overlay" id="handicapModal">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('handicapModal').classList.remove('active')">✕</button>
-    <div class="modal-title">기력 변경</div>
-    <div style="margin-bottom:1.25rem;color:var(--text-secondary);">
-      <strong id="handicapMemberName"></strong> 님의 기력을 변경합니다.
-    </div>
-    <div class="form-group">
-      <label class="form-label">기력 (예: 5급, 2단)</label>
-      <input type="text" class="form-control" id="handicapInput" placeholder="예: 5급">
-    </div>
-    <div id="handicapAlert"></div>
-    <button class="btn btn-primary btn-full" onclick="saveHandicap()">저장</button>
   </div>
 </div>
 

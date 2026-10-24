@@ -3,7 +3,7 @@ import {
   collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc,
   query, where, writeBatch, serverTimestamp, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { hashString, showAlert, generateMatchPairs, parseRank, formatRank } from './utils.js';
+import { hashString, showAlert, generateMatchPairs } from './utils.js';
 
 let allActiveLeagues = [];
 let allEndedLeagues = [];
@@ -24,7 +24,6 @@ let playerToDelete = null;
 let memberToDelete = null;
 let bonusPlayerId = null;
 let editScheduleData = null;
-let editHandicapMemberId = null;
 let editPinMemberId = null;
 let renameMemberId = null;
 let editLeagueId = null;
@@ -198,8 +197,8 @@ async function saveEditLeague() {
 
 async function loadYearlyScores() {
   try {
-    const snap = await getDocs(query(collection(db, 'baduk_members'), orderBy('handicap', 'desc')));
-    const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await getDocs(collection(db, 'baduk_members'));
+    const members = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
     document.getElementById('yearlyScoreCount').textContent = `총 ${members.length}명`;
     const el = document.getElementById('yearlyScoreList');
     if (!members.length) {
@@ -244,8 +243,8 @@ async function saveAllYearlyScores() {
 
 async function loadMembers() {
   try {
-    const snap = await getDocs(query(collection(db, 'baduk_members'), orderBy('handicap', 'desc')));
-    allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await getDocs(collection(db, 'baduk_members'));
+    allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
     document.getElementById('memberCount').textContent = `총 ${allMembers.length}명`;
     renderMemberList();
     if (currentLeague) renderMemberSelectForLeague();
@@ -257,7 +256,6 @@ async function loadMembers() {
 
 async function addMember() {
   const name = document.getElementById('newMemberName').value.trim();
-  const handicapVal = document.getElementById('newMemberHandicap').value.trim();
   const pin = document.getElementById('newMemberPin').value.trim();
   if (!name) { showAlert('memberAlert', '이름을 입력하세요.'); return; }
   if (!/^\d{4}$/.test(pin)) { showAlert('memberAlert', 'PIN은 숫자 4자리입니다.'); return; }
@@ -265,11 +263,8 @@ async function addMember() {
 
   try {
     const pinHash = await hashString(pin);
-    const handicap = handicapVal !== '' ? parseRank(handicapVal) : 0;
-    if (handicap == null) { showAlert('memberAlert', '기력은 "5급", "2단"처럼 입력하세요.'); return; }
-    await setDoc(doc(collection(db, 'baduk_members')), { name, handicap, pinHash });
+    await setDoc(doc(collection(db, 'baduk_members')), { name, pinHash });
     document.getElementById('newMemberName').value = '';
-    document.getElementById('newMemberHandicap').value = '';
     document.getElementById('newMemberPin').value = '';
     showAlert('memberAlert', `${name} 회원이 등록되었습니다.`, 'success');
     await loadMembers();
@@ -286,11 +281,9 @@ function renderMemberList() {
     <div class="player-row">
       <span>
         <strong>${m.name}</strong>
-        ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">${formatRank(m.handicap)}</span>` : ''}
       </span>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button class="btn btn-sm btn-secondary" onclick="openRenameModal('${m.id}','${m.name}')">이름 변경</button>
-        <button class="btn btn-sm btn-secondary" onclick="openHandicapModal('${m.id}','${m.name}',${m.handicap ?? 0})">기력 변경</button>
         <button class="btn btn-sm btn-secondary" onclick="openChangePinModal('${m.id}','${m.name}')">비밀번호 변경</button>
         <button class="btn btn-sm btn-danger" onclick="openDeleteMember('${m.id}','${m.name}')">삭제</button>
       </div>
@@ -348,33 +341,6 @@ async function saveChangedPin() {
   } catch (e) { showAlert('changePinAlert', '오류: ' + e.message); }
 }
 
-function openHandicapModal(memberId, memberName, currentHandicap) {
-  editHandicapMemberId = memberId;
-  document.getElementById('handicapMemberName').textContent = memberName;
-  document.getElementById('handicapInput').value = currentHandicap ? formatRank(currentHandicap) : '';
-  document.getElementById('handicapAlert').innerHTML = '';
-  document.getElementById('handicapModal').classList.add('active');
-}
-
-async function saveHandicap() {
-  if (!editHandicapMemberId) return;
-  const val = parseRank(document.getElementById('handicapInput').value);
-  if (val == null) { showAlert('handicapAlert', '기력은 "5급", "2단"처럼 입력하세요. (1~30급, 1~9단)'); return; }
-  try {
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'baduk_members', editHandicapMemberId), { handicap: val });
-    const player = allPlayers.find(p => p.memberId === editHandicapMemberId);
-    if (player && currentLeague) {
-      batch.update(doc(db, 'baduk_leagues', currentLeague.id, 'players', player.id), { handicap: val });
-    }
-    await batch.commit();
-    document.getElementById('handicapModal').classList.remove('active');
-    editHandicapMemberId = null;
-    showAlert('memberAlert', '기력이 변경되었습니다.', 'success');
-    await loadMembers();
-  } catch (e) { showAlert('handicapAlert', '오류: ' + e.message); }
-}
-
 function openDeleteMember(memberId, memberName) {
   memberToDelete = memberId;
   document.getElementById('deleteMemberInfo').textContent =
@@ -408,7 +374,7 @@ async function loadPlayers() {
     getDocs(collection(db, 'baduk_leagues', currentLeague.id, 'players')),
     getDocs(collection(db, 'baduk_leagues', currentLeague.id, 'matches'))
   ]);
-  allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.handicap ?? 0) - (a.handicap ?? 0));
+  allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   allMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
   renderPlayerTab();
 }
@@ -434,7 +400,6 @@ function renderPlayerList() {
     return `<div class="player-row">
       <span>
         <strong>${p.name}</strong>
-        ${p.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">${formatRank(p.handicap)}</span>` : ''}
         ${bonusLabel}
       </span>
       <div style="display:flex;gap:0.5rem;">
@@ -465,7 +430,6 @@ function renderMemberSelectForLeague() {
         <input type="checkbox" value="${m.id}" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
         <span>
           <strong>${m.name}</strong>
-          ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">${formatRank(m.handicap)}</span>` : ''}
         </span>
       </div>
     </label>`).join('');
@@ -485,7 +449,7 @@ async function addSelectedMembers() {
 
     selectedMembers.forEach(m => {
       const ref = doc(collection(db, 'baduk_leagues', currentLeague.id, 'players'));
-      batch.set(ref, { name: m.name, handicap: m.handicap ?? 0, pinHash: m.pinHash, memberId: m.id });
+      batch.set(ref, { name: m.name, pinHash: m.pinHash, memberId: m.id });
       newPlayerIds.push(ref.id);
     });
 
@@ -570,7 +534,7 @@ async function loadResultData() {
     getDocs(collection(db, 'baduk_leagues', resultLeague.id, 'players')),
     getDocs(collection(db, 'baduk_leagues', resultLeague.id, 'matches'))
   ]);
-  resultPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.handicap ?? 0) - (a.handicap ?? 0));
+  resultPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   resultMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
   if (prevSelected && resultPlayers.find(p => p.id === prevSelected)) {
     selectedResultPlayerId = prevSelected;
@@ -1069,8 +1033,6 @@ window.openChangePinModal = openChangePinModal;
 window.openRenameModal = openRenameModal;
 window.saveMemberName = saveMemberName;
 window.saveChangedPin = saveChangedPin;
-window.openHandicapModal = openHandicapModal;
-window.saveHandicap = saveHandicap;
 window.openDeleteMember = openDeleteMember;
 window.confirmDeleteMember = confirmDeleteMember;
 window.onPlayerLeagueChange = onPlayerLeagueChange;

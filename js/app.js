@@ -2,7 +2,7 @@ import { db } from './firebase-config.js';
 import {
   collection, doc, getDocs, getDoc, query, where, onSnapshot, updateDoc, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { showAlert, calculateStandings, matchLine, matchDate, formatMonthDay, firstFinisherId, formatRank } from './utils.js';
+import { showAlert, calculateStandings, matchLine, matchDate, formatMonthDay, firstFinisherId } from './utils.js';
 
 let allActiveLeagues = [];
 let activeLeague = null;
@@ -159,11 +159,6 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function rankTag(playerId) {
-  const rank = formatRank(allPlayers.find(x => x.id === playerId)?.handicap);
-  return rank === '-' ? '' : `<span class="rank-tag">(${rank})</span>`;
-}
-
 function remainingLabel(p) {
   const left = p.total - p.played;
   return left > 0 ? `남은 경기 ${left}판` : 'Clear !';
@@ -184,7 +179,7 @@ function renderStandings() {
     const gift = p.id === finisher ? ' <span title="가장 먼저 모든 대국 완료">🎁</span>' : '';
     return `<tr>
       <td><span class="rank-badge ${cls}">${r}</span></td>
-      <td><strong class="player-link" onclick="togglePlayerPopover(event,'${p.id}')" onmouseleave="schedulePopoverClose()">${p.name}</strong>${rankTag(p.id)}${gift}</td>
+      <td><strong class="player-link" onclick="togglePlayerPopover(event,'${p.id}')" onmouseleave="schedulePopoverClose()">${p.name}</strong>${gift}</td>
       <td class="wins">${p.wins}</td>
       <td class="losses">${p.losses}</td>
       <td class="points">${p.points}</td>
@@ -372,7 +367,7 @@ function togglePlayerPopover(event, playerId) {
 
   const pop = document.getElementById('playerPopover');
   pop.innerHTML = `
-    <div class="pop-head"><span><strong>${player.name}</strong>${rankTag(playerId)}</span><span>${st.wins}승 ${st.losses}패 · ${st.points}점</span></div>
+    <div class="pop-head"><strong>${player.name}</strong><span>${st.wins}승 ${st.losses}패 · ${st.points}점</span></div>
     <div class="pop-section">대국 내역</div>${doneHtml}
     <div class="pop-section pop-divider">${waiting.length ? `남은 대국 ${waiting.length}판` : '남은 대국'}</div>${waitHtml}`;
 

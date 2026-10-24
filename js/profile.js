@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, getDocs, collection, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { hashString, showAlert, formatRank } from './utils.js';
+import { hashString, showAlert } from './utils.js';
 
 let memberId = null;
 let memberData = null;
@@ -16,9 +16,6 @@ async function init() {
     memberData = { id: snap.id, ...snap.data() };
     document.getElementById('currentNameDisplay').textContent = memberData.name;
     document.getElementById('newNameInput').value = memberData.name;
-    if (memberData.handicap != null) {
-      document.getElementById('handicapDisplay').textContent = `기력: ${formatRank(memberData.handicap)}`;
-    }
   } catch (e) {
     showAlert('nameAlert', '불러오기 실패: ' + e.message);
   }
