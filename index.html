@@ -111,7 +111,12 @@
         <div id="entryHelpBody" style="display:none;padding:0 0.9rem 0.75rem;color:var(--text-secondary);line-height:1.7;">
           <div style="margin-bottom:0.5rem;">대국을 마친 두 분 중 한 분만 결과를 입력하셔도 양쪽에 동시 등록됩니다.</div>
           <div style="margin-bottom:0.5rem;">대국 후에는 진 쪽이 결과를 입력하시기를 권장드립니다.</div>
-          <div>불계승·계가승·시간승 모두 [ 본인 승리 / 상대 승리 ]로 입력하시면 됩니다.</div>
+          <div style="margin-bottom:0.85rem;">불계승·계가승·시간승 모두 [ 본인 승리 / 상대 승리 ]로 입력하시면 됩니다.</div>
+          <div style="font-weight:bold;color:#ff7043;margin-bottom:0.4rem;">※ 치수 입력 ※</div>
+          <div style="margin-bottom:0.5rem;">결과를 입력할 때 몇 점 접바둑이었는지 [ 치수 ]를 함께 선택해주세요.</div>
+          <div style="margin-bottom:0.5rem;">· 호선 : 돌을 가려 흑백을 정하고 덤을 주는 대국</div>
+          <div style="margin-bottom:0.5rem;">· 정선 : 하수가 흑을 잡고 덤 없이 두는 대국</div>
+          <div>· 2점 ~ 9점 : 하수가 미리 놓고 둔 돌의 수</div>
         </div>
       </div>
 
@@ -147,6 +152,22 @@
     <div id="modalMatchInfo" style="margin-bottom:1rem;color:var(--text-secondary);"></div>
     <div id="modalAlert"></div>
 
+    <div class="form-group">
+      <label class="form-label">치수 (몇 점 접바둑이었나요?)</label>
+      <select class="form-control" id="stonesSelect">
+        <option value="">-- 치수 선택 --</option>
+        <option value="호선">호선</option>
+        <option value="정선">정선</option>
+        <option value="2점">2점</option>
+        <option value="3점">3점</option>
+        <option value="4점">4점</option>
+        <option value="5점">5점</option>
+        <option value="6점">6점</option>
+        <option value="7점">7점</option>
+        <option value="8점">8점</option>
+        <option value="9점">9점</option>
+      </select>
+    </div>
 
     <div style="display:flex;flex-direction:column;gap:0.75rem;">
       <button class="btn btn-primary btn-full" onclick="submitResult('win')">본인 승리</button>

@@ -626,8 +626,9 @@ function renderResultPlayerMatches() {
       const p1n = resultPlayers.find(p => p.id === m.player1Id)?.name || '?';
       const p2n = resultPlayers.find(p => p.id === m.player2Id)?.name || '?';
       let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      const stonesText = m.stones ? ` (${m.stones})` : '';
+      if (m.result === 'player1') { resultText = `${p1n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
       else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
       else if (m.result === 'noGame') { resultText = '미대국'; resultStyle = 'color:#9e9e9e'; }
       return `<div class="match-item">
@@ -656,6 +657,7 @@ function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
   document.getElementById('editModalAlert').innerHTML = '';
   const list = resultLeague?.id === currentEditLeagueId ? resultMatches : historyMatches;
   const match = list.find(m => m.id === matchId);
+  document.getElementById('editStonesSelect').value = match?.stones || '';
   const d = match?.reportedAt ? (match.reportedAt.toDate ? match.reportedAt.toDate() : new Date(match.reportedAt)) : new Date();
   document.getElementById('editMatchDate').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   document.getElementById('editResultModal').classList.add('active');
@@ -667,11 +669,13 @@ async function adminSetResult(result) {
   const p1Id = document.getElementById('editPlayer1Id').value;
   const p2Id = document.getElementById('editPlayer2Id').value;
   const winnerId = result === 'player1' ? p1Id : result === 'player2' ? p2Id : null;
+  const stones = document.getElementById('editStonesSelect').value;
+  if (winnerId && !stones) { showAlert('editModalAlert', '치수를 먼저 선택해주세요.'); return; }
   const dateStr = document.getElementById('editMatchDate').value;
   if (winnerId && !dateStr) { showAlert('editModalAlert', '대국 날짜를 선택해주세요.'); return; }
   const update = winnerId
-    ? { result, winnerId, reportedBy: 'admin', reportedAt: new Date(`${dateStr}T12:00:00`) }
-    : { result: null, winnerId: null, reportedBy: null, reportedAt: null };
+    ? { result, winnerId, stones, reportedBy: 'admin', reportedAt: new Date(`${dateStr}T12:00:00`) }
+    : { result: null, winnerId: null, stones: null, reportedBy: null, reportedAt: null };
   try {
     await updateDoc(doc(db, 'baduk_leagues', currentEditLeagueId, 'matches', matchId), update);
     document.getElementById('editResultModal').classList.remove('active');
@@ -775,8 +779,9 @@ function renderHistoryPlayerMatches() {
       const p1n = historyPlayers.find(p => p.id === m.player1Id)?.name || '?';
       const p2n = historyPlayers.find(p => p.id === m.player2Id)?.name || '?';
       let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      const stonesText = m.stones ? ` (${m.stones})` : '';
+      if (m.result === 'player1') { resultText = `${p1n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승${stonesText}`; resultStyle = 'color:#81c784'; }
       else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
       else if (m.result === 'noGame') { resultText = '미대국'; resultStyle = 'color:#9e9e9e'; }
       return `<div class="match-item">
@@ -805,6 +810,7 @@ function openHistoryEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
   document.getElementById('editModalAlert').innerHTML = '';
   const list = resultLeague?.id === currentEditLeagueId ? resultMatches : historyMatches;
   const match = list.find(m => m.id === matchId);
+  document.getElementById('editStonesSelect').value = match?.stones || '';
   const d = match?.reportedAt ? (match.reportedAt.toDate ? match.reportedAt.toDate() : new Date(match.reportedAt)) : new Date();
   document.getElementById('editMatchDate').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   document.getElementById('editResultModal').classList.add('active');

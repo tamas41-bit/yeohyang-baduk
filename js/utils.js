@@ -75,6 +75,8 @@ export function formatRank(num) {
   return num > 100 ? `${num - 100}단` : `${100 - num}급`;
 }
 
+export const STONE_OPTIONS = ['호선', '정선', '2점', '3점', '4점', '5점', '6점', '7점', '8점', '9점'];
+
 export function matchDate(m) {
   if (!m.reportedAt) return null;
   return m.reportedAt.toDate ? m.reportedAt.toDate() : new Date(m.reportedAt);
@@ -95,14 +97,15 @@ export function matchLine(m, players, subjectId = null, html = false) {
     const rank = formatRank(p.handicap);
     return rank === '-' ? p.name : `${p.name}${small(`(${rank})`)}`;
   };
+  const stones = m.stones ? ` ${small(`(${m.stones})`)}` : '';
   if (m.result !== 'player1' && m.result !== 'player2') {
     const [a, b] = subjectId === m.player2Id ? [m.player2Id, m.player1Id] : [m.player1Id, m.player2Id];
     return `${name(a)} VS ${name(b)} ${small(m.result ? '(미대국)' : '(대기중)')}`;
   }
   const winner = m.result === 'player1' ? m.player1Id : m.player2Id;
   const loser = winner === m.player1Id ? m.player2Id : m.player1Id;
-  if (subjectId === loser) return `${name(loser)} ${loss} VS ${name(winner)} ${win}`;
-  return `${name(winner)} ${win} VS ${name(loser)} ${loss}`;
+  if (subjectId === loser) return `${name(loser)} ${loss} VS ${name(winner)} ${win}${stones}`;
+  return `${name(winner)} ${win} VS ${name(loser)} ${loss}${stones}`;
 }
 
 // 모든 대국을 가장 먼저 끝낸 선수 id (마지막 대국 입력 시각 기준)

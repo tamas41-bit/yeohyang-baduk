@@ -281,9 +281,10 @@ function renderEntryList() {
     } else {
       const myWin = (m.result === 'player1' && m.player1Id === loggedInPlayer.id) ||
                     (m.result === 'player2' && m.player2Id === loggedInPlayer.id);
+      const scoreLabel = m.stones ? ` (${m.stones})` : '';
       statusHtml = myWin
-        ? '<span class="match-status status-win">승리 ✓</span>'
-        : '<span class="match-status status-loss">패배</span>';
+        ? `<span class="match-status status-win">승리${scoreLabel} ✓</span>`
+        : `<span class="match-status status-loss">패배${scoreLabel}</span>`;
       actionHtml = editBtn;
     }
     return `<div class="match-item">
@@ -304,6 +305,8 @@ function openResultModal(matchId, oppId, oppName) {
   document.getElementById('modalMatchInfo').innerHTML =
     `<strong>${loggedInPlayer.name}</strong> vs <strong>${oppName}</strong>`;
   document.getElementById('modalAlert').innerHTML = '';
+  const m = allMatches.find(x => x.id === matchId);
+  document.getElementById('stonesSelect').value = m?.stones || '';
   document.getElementById('resultModal').classList.add('active');
 }
 
@@ -311,7 +314,7 @@ async function resetResult() {
   if (!pendingMatchId || !loggedInPlayer) return;
   try {
     await updateDoc(doc(db, 'baduk_leagues', activeLeague.id, 'matches', pendingMatchId), {
-      result: null, winnerId: null, reportedBy: null, reportedAt: null
+      result: null, winnerId: null, stones: null, reportedBy: null, reportedAt: null
     });
     document.getElementById('resultModal').classList.remove('active');
   } catch (e) {
@@ -323,13 +326,15 @@ async function submitResult(type) {
   if (!pendingMatchId || !loggedInPlayer) return;
   const m = allMatches.find(x => x.id === pendingMatchId);
   if (!m) return;
+  const stones = document.getElementById('stonesSelect').value;
+  if (!stones) { showAlert('modalAlert', '치수를 먼저 선택해주세요.'); return; }
 
   const winnerId = type === 'win' ? loggedInPlayer.id : pendingOpponentId;
   const result = m.player1Id === winnerId ? 'player1' : 'player2';
 
   try {
     await updateDoc(doc(db, 'baduk_leagues', activeLeague.id, 'matches', pendingMatchId), {
-      result, winnerId, reportedBy: loggedInPlayer.id, reportedAt: new Date()
+      result, winnerId, stones, reportedBy: loggedInPlayer.id, reportedAt: new Date()
     });
     document.getElementById('resultModal').classList.remove('active');
   } catch (e) {
