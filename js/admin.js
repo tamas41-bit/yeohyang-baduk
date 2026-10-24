@@ -1,9 +1,10 @@
 import { db } from './firebase-config.js';
 import {
   collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc,
-  query, where, writeBatch, serverTimestamp, orderBy, limit
+  query, where, writeBatch, serverTimestamp, orderBy, limit, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { hashString, showAlert, generateMatchPairs } from './utils.js';
+import { AUTO_DEFAULTS, getAutoSettings, saveAutoSettings, getOptOuts, setOptOut, runAutoRollover, currentMonthKey, shiftMonth, monthLabel, leagueNameFor } from './autoleague.js';
 
 let allActiveLeagues = [];
 let allEndedLeagues = [];
@@ -68,6 +69,7 @@ function adminLogout() {
 }
 
 async function loadAll() {
+  try { await runAutoRollover(); } catch (e) { console.warn('자동 전환 실패', e); }
   await Promise.all([loadLeagues(), loadMembers()]);
 }
 
@@ -136,14 +138,16 @@ async function createLeague() {
   const loss = parseInt(document.getElementById('scoreLoss').value) || 0;
   const noGame = parseInt(document.getElementById('scoreNoGame').value) || 0;
   const notice = document.getElementById('leagueNotice').value.trim();
+  const autoEnd = document.getElementById('leagueAutoEnd').checked;
   if (!name) { showAlert('createLeagueAlert', '리그 이름을 입력하세요.'); return; }
 
   try {
     const newRef = doc(collection(db, 'baduk_leagues'));
-    await setDoc(newRef, { name, notice, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
+    await setDoc(newRef, { name, notice, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp(), ...(autoEnd ? { month: currentMonthKey() } : {}) });
     showAlert('createLeagueAlert', '리그가 생성되었습니다! 선수 관리 탭에서 참가자를 등록하세요.', 'success');
     document.getElementById('leagueName').value = '';
     document.getElementById('leagueNotice').value = '';
+    document.getElementById('leagueAutoEnd').checked = false;
     await loadLeagues();
   } catch (e) { showAlert('createLeagueAlert', '오류: ' + e.message); }
 }
@@ -1064,3 +1068,134 @@ window.openEditBoardPostModal = openEditBoardPostModal;
 window.saveEditBoardPost = saveEditBoardPost;
 
 init();
+
+// ── 자동 운영 ──────────────────────────────────────────────────────
+
+let autoSettings = null;
+let autoOptOuts = [];
+
+async function loadAutoTab() {
+  try {
+    const next = shiftMonth(currentMonthKey(), 1);
+    [autoSettings, autoOptOuts] = await Promise.all([getAutoSettings(), getOptOuts(next)]);
+    if (!allMembers.length) await loadMembers();
+    renderAutoTab();
+  } catch (e) { showAlert('autoAlert', '불러오기 실패: ' + e.message); }
+}
+
+function renderAutoTab() {
+  const s = autoSettings;
+  const btn = document.getElementById('autoToggleBtn');
+  btn.textContent = s.enabled ? '자동 운영 끄기 (수동으로만 운영)' : '자동 운영 켜기';
+  btn.className = `btn btn-full ${s.enabled ? 'btn-secondary' : 'btn-gold'}`;
+  document.getElementById('autoStatusBadge').innerHTML = s.enabled
+    ? '<span class="badge badge-active">켜짐</span>'
+    : '<span class="badge badge-inactive">꺼짐 (수동 운영)</span>';
+  document.getElementById('autoLastRun').textContent = s.lastRolloverMonth
+    ? `마지막 처리: ${monthLabel(s.lastRolloverMonth)}${s.lastRolloverNote ? ' — ' + s.lastRolloverNote : ''}`
+    : '아직 자동 전환이 실행된 적이 없습니다.';
+
+  document.getElementById('autoNameFormat').value = s.nameFormat;
+  document.getElementById('autoScoreWin').value = s.scoring.win;
+  document.getElementById('autoScoreLoss').value = s.scoring.loss;
+  document.getElementById('autoScoreNoGame').value = s.scoring.noGame;
+  document.getElementById('autoMinPlayers').value = s.minPlayers;
+  document.getElementById('autoCancelDeadline').value = s.cancelDeadlineDays;
+  document.getElementById('autoCopyNotice').checked = !!s.copyNotice;
+  document.getElementById('autoNotice').value = s.notice || '';
+
+  const cur = currentMonthKey();
+  document.getElementById('autoLeagueList').innerHTML = allActiveLeagues.length
+    ? allActiveLeagues.map(l => `
+      <div class="player-row">
+        <span><strong>${l.name}</strong>${l.month ? `<span style="color:var(--text-secondary);font-size:0.85rem;margin-left:0.4rem;">${monthLabel(l.month)} 종료 예정</span>` : ''}</span>
+        ${l.month
+          ? `<button class="btn btn-sm btn-secondary" onclick="setLeagueAutoEnd('${l.id}', false)">대상 해제</button>`
+          : `<button class="btn btn-sm btn-primary" onclick="setLeagueAutoEnd('${l.id}', true)">${monthLabel(cur)} 말 자동 종료</button>`}
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:1rem;">진행 중인 리그가 없습니다</div>';
+
+  const next = shiftMonth(cur, 1);
+  const inCount = allMembers.filter(m => !autoOptOuts.includes(m.id)).length;
+  document.getElementById('autoSignupTitle').textContent = `${monthLabel(next)} 참가 명단`;
+  document.getElementById('autoSignupCount').textContent = `참가 ${inCount}명 / 불참 ${allMembers.length - inCount}명`;
+  document.getElementById('autoSignupList').innerHTML = allMembers.map(m => {
+    const out = autoOptOuts.includes(m.id);
+    return `<div class="player-row">
+      <strong>${m.name}</strong>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="match-status ${out ? 'status-loss' : 'status-win'}">${out ? '불참' : '참가'}</span>
+        <button class="btn btn-sm btn-secondary" onclick="adminSetOptOut('${m.id}', ${!out})">${out ? '참가로 변경' : '불참으로 변경'}</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty-state" style="padding:1rem;">등록된 회원이 없습니다</div>';
+}
+
+async function toggleAutoMode() {
+  const turnOn = !autoSettings.enabled;
+  const msg = turnOn
+    ? '자동 운영을 켭니다.\n이번 달은 처리된 것으로 기록되고, 다음 달 1일 이후 첫 접속 때부터 자동 전환됩니다.'
+    : '자동 운영을 끕니다.\n이후에는 [리그 관리] 탭에서 수동으로만 리그를 만들고 종료합니다.';
+  if (!confirm(msg)) return;
+  try {
+    const patch = turnOn ? { enabled: true, lastRolloverMonth: currentMonthKey() } : { enabled: false };
+    await saveAutoSettings(patch);
+    autoSettings = { ...autoSettings, ...patch };
+    renderAutoTab();
+    showAlert('autoAlert', turnOn ? '자동 운영이 켜졌습니다.' : '자동 운영이 꺼졌습니다. 수동으로 운영합니다.', 'success');
+  } catch (e) { showAlert('autoAlert', '오류: ' + e.message); }
+}
+
+async function saveAutoSettingsForm() {
+  const num = (id, def) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? def : v; };
+  const nameFormat = document.getElementById('autoNameFormat').value.trim() || AUTO_DEFAULTS.nameFormat;
+  const patch = {
+    nameFormat,
+    scoring: { win: num('autoScoreWin', 3), loss: num('autoScoreLoss', 1), noGame: num('autoScoreNoGame', 0) },
+    minPlayers: Math.max(2, num('autoMinPlayers', 3)),
+    cancelDeadlineDays: Math.min(27, Math.max(0, num('autoCancelDeadline', 0))),
+    copyNotice: document.getElementById('autoCopyNotice').checked,
+    notice: document.getElementById('autoNotice').value.trim()
+  };
+  try {
+    await saveAutoSettings(patch);
+    autoSettings = { ...autoSettings, ...patch };
+    renderAutoTab();
+    showAlert('autoSettingsAlert', `저장되었습니다. 다음 리그 이름 예시: ${leagueNameFor(nameFormat, shiftMonth(currentMonthKey(), 1))}`, 'success');
+  } catch (e) { showAlert('autoSettingsAlert', '오류: ' + e.message); }
+}
+
+async function setLeagueAutoEnd(leagueId, on) {
+  try {
+    await updateDoc(doc(db, 'baduk_leagues', leagueId), { month: on ? currentMonthKey() : deleteField() });
+    await loadLeagues();
+    renderAutoTab();
+  } catch (e) { showAlert('autoAlert', '오류: ' + e.message); }
+}
+
+async function adminSetOptOut(memberId, out) {
+  try {
+    const next = shiftMonth(currentMonthKey(), 1);
+    await setOptOut(next, memberId, out);
+    autoOptOuts = out ? [...autoOptOuts, memberId] : autoOptOuts.filter(id => id !== memberId);
+    renderAutoTab();
+  } catch (e) { showAlert('autoAlert', '오류: ' + e.message); }
+}
+
+async function runRolloverNow() {
+  if (!confirm('지금 자동 전환을 실행할까요?\n지난달 대상 리그가 종료되고, 이번 달 리그가 없으면 새로 만들어집니다.')) return;
+  try {
+    const res = await runAutoRollover({ force: true });
+    autoSettings = await getAutoSettings();
+    await loadLeagues();
+    renderAutoTab();
+    showAlert('autoRunAlert', res.note || '처리할 내용이 없습니다.', 'success');
+  } catch (e) { showAlert('autoRunAlert', '오류: ' + e.message); }
+}
+
+window.loadAutoTab = loadAutoTab;
+window.toggleAutoMode = toggleAutoMode;
+window.saveAutoSettingsForm = saveAutoSettingsForm;
+window.setLeagueAutoEnd = setLeagueAutoEnd;
+window.adminSetOptOut = adminSetOptOut;
+window.runRolloverNow = runRolloverNow;

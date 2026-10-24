@@ -3,6 +3,7 @@ import {
   collection, doc, getDocs, getDoc, query, where, onSnapshot, updateDoc, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { showAlert, calculateStandings, matchLine, matchDate, formatMonthDay, firstFinisherId } from './utils.js';
+import { runAutoRollover, getAutoSettings, getOptOuts, setOptOut, cancelOpen, currentMonthKey, shiftMonth, leagueNameFor, seoulDate } from './autoleague.js';
 
 let allActiveLeagues = [];
 let activeLeague = null;
@@ -15,6 +16,8 @@ let pendingOpponentName = null;
 let unsubscribeMatches = null;
 
 async function init() {
+  try { await runAutoRollover(); } catch (e) { console.warn('자동 전환 실패', e); }
+  renderNextLeagueBox().catch(e => console.warn('참가 신청 표시 실패', e));
   try {
     const snap = await getDocs(query(
       collection(db, 'baduk_leagues'),
@@ -454,5 +457,66 @@ window.renderMatrix = renderMatrix;
 window.togglePlayerPopover = togglePlayerPopover;
 window.schedulePopoverClose = schedulePopoverClose;
 window.copyLogText = copyLogText;
+window.toggleMyNextLeague = toggleMyNextLeague;
+
+
+// ── 다음 달 리그 참가 신청 ──
+async function renderNextLeagueBox() {
+  const box = document.getElementById('nextLeagueBox');
+  const settings = await getAutoSettings();
+  if (!settings.enabled) { box.innerHTML = ''; return; }
+
+  const next = shiftMonth(currentMonthKey(), 1);
+  const nextName = leagueNameFor(settings.nameFormat, next);
+  const saved = localStorage.getItem('baduk_player');
+  if (!saved) {
+    box.innerHTML = `<div class="card next-league">
+      <div class="next-league-title">【 ${escapeHtml(nextName)} 참가 신청 】</div>
+      <div>모든 회원은 자동 참가로 신청되어 있습니다. 불참하시려면 <a href="login.html" style="color:var(--gold);">로그인</a> 후 참가를 취소해주세요.</div>
+    </div>`;
+    return;
+  }
+
+  const me = JSON.parse(saved);
+  const [out, membersSnap] = await Promise.all([getOptOuts(next), getDocs(collection(db, 'baduk_members'))]);
+  const members = membersSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const joining = members.filter(m => !out.includes(m.id));
+  const iAmOut = out.includes(me.id);
+  const open = cancelOpen(settings);
+  const t = seoulDate();
+  const lastDay = new Date(t.year, t.month, 0).getDate();
+  const deadline = `${t.month}월 ${lastDay - (Number(settings.cancelDeadlineDays) || 0)}일`;
+
+  const status = iAmOut
+    ? '<span class="match-status status-loss">불참</span>'
+    : '<span class="match-status status-win">참가 예정</span>';
+  const action = open
+    ? `<button class="btn btn-sm ${iAmOut ? 'btn-primary' : 'btn-danger'}" onclick="toggleMyNextLeague(${!iAmOut})">${iAmOut ? '다시 참가하기' : '참가 취소'}</button>`
+    : '<span style="color:var(--text-secondary);font-size:0.85rem;">신청 마감</span>';
+
+  box.innerHTML = `<div class="card next-league">
+    <div class="next-league-title">【 ${escapeHtml(nextName)} 참가 신청 】</div>
+    <div class="next-league-row">
+      <span><strong>${escapeHtml(me.name)}</strong> 님 ${status}</span>
+      ${action}
+    </div>
+    <div class="next-league-sub">${open ? `${deadline}까지 변경할 수 있습니다.` : `${deadline}에 마감되었습니다. 변경은 관리자에게 문의하세요.`}</div>
+    <div class="next-league-sub">참가 예정 ${joining.length}명: ${joining.map(m => escapeHtml(m.name)).join(', ') || '-'}</div>
+  </div>`;
+}
+
+async function toggleMyNextLeague(out) {
+  const saved = localStorage.getItem('baduk_player');
+  if (!saved) return;
+  const settings = await getAutoSettings();
+  if (!cancelOpen(settings)) { await renderNextLeagueBox(); return; }
+  if (out && !confirm('다음 달 리그 참가를 취소할까요?')) return;
+  await setOptOut(shiftMonth(currentMonthKey(), 1), JSON.parse(saved).id, out);
+  await renderNextLeagueBox();
+}
+
+// 열어둔 화면도 달이 바뀌면 새로고침해서 자동 전환을 실행
+const loadedMonth = currentMonthKey();
+setInterval(() => { if (currentMonthKey() !== loadedMonth) location.reload(); }, 60 * 1000);
 
 init();

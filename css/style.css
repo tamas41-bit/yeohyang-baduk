@@ -345,3 +345,7 @@ button, input, select, textarea { font-family: inherit; }
 .log-text .ml-win { color: #2f7a1f; }
 .log-text .ml-loss { color: #b0321d; }
 .pop-head .rank-tag { color: #b9c8ea; }
+.next-league { padding: 1rem 1.25rem; font-size: 0.92rem; line-height: 1.7; }
+.next-league-title { color: var(--gold); font-size: 1.02rem; margin-bottom: 0.4rem; }
+.next-league-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
+.next-league-sub { font-size: 0.84rem; color: var(--text-secondary); }
